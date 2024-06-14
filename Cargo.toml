@@ -1,0 +1,13 @@
+[package]
+name = "group_stats"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+clap = { version = "4.0", features = ["derive"] }
+is-terminal = "0.4.12"
+streaming-stats = "0.2.3"
+
+[dev-dependencies]
+approx = "0.5.1"
