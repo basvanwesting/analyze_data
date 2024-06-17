@@ -3,7 +3,7 @@ mod number_stats;
 use clap::{CommandFactory, Parser};
 use cli_table::{
     format::{HorizontalLine, Justify, Separator, VerticalLine},
-    print_stdout, Cell, Style, Table,
+    print_stdout, Cell, CellStruct, Style, Table,
 };
 use is_terminal::IsTerminal as _;
 use number_stats::NumberStats;
@@ -21,7 +21,7 @@ struct Cli {
     #[arg(short, long)]
     delimiter: char,
 
-    /// Optional output delimiter, default to human readable aligned text output
+    /// Optional output delimiter, default to human readable table output
     #[arg(short = 'D', long)]
     output_delimiter: Option<char>,
 
@@ -87,7 +87,7 @@ fn group_stats_in_buf_reader<R: BufRead>(
             }
             None => {
                 group_stats
-                    .entry(raw)
+                    .entry("<INVALID>".to_string())
                     .and_modify(|number_stats| number_stats.add_null())
                     .or_insert(NumberStats::new());
             }
@@ -137,9 +137,7 @@ fn print_group_stats_table(formatted_data: Vec<Vec<String>>) {
         ])
         .bold(true);
 
-    let table_display = table.display().unwrap();
-
-    println!("{}", table_display);
+    print_stdout(table).unwrap();
 }
 
 fn print_group_stats_csv(formatted_data: Vec<Vec<String>>, delimiter: char) {

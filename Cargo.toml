@@ -10,5 +10,5 @@ is-terminal = "0.4.12"
 streaming-stats = "0.2.3"
 cli-table = "0.4.7"
 
-[dev-dependencies]
-approx = "0.5.1"
+# [dev-dependencies]
+# approx = "0.5.1"

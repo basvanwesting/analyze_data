@@ -40,3 +40,38 @@ impl NumberStats {
         self.online_stats.stddev()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new() {
+        let stats = NumberStats::new();
+        assert_eq!(stats.count(), 0);
+        assert_eq!(stats.null_count(), 0);
+        assert_eq!(stats.min(), None);
+        assert_eq!(stats.max(), None);
+        assert_eq!(stats.mean(), 0.0);
+        assert_eq!(stats.stddev(), 0.0);
+    }
+
+    #[test]
+    fn test_add() {
+        let mut stats = NumberStats::new();
+        stats.add(1.0);
+        stats.add(2.0);
+        assert_eq!(stats.count(), 2);
+        assert_eq!(stats.min(), Some(1.0));
+        assert_eq!(stats.max(), Some(2.0));
+        assert_eq!(stats.mean(), 1.5);
+        assert!((stats.stddev() - 0.5).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_add_null() {
+        let mut stats = NumberStats::new();
+        stats.add_null();
+        assert_eq!(stats.null_count(), 1);
+    }
+}
