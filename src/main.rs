@@ -13,7 +13,9 @@ use std::{
     path::PathBuf,
 };
 
-/// some number stats on stream (count, min, max, mean, stddev)
+/// Grouped number stats on stream (count, min, max, mean, stddev).
+/// Takes the last column of the provided data as the number value to analyze.
+/// All preceding columns are interpreted as grouping data.
 #[derive(Parser)]
 struct Cli {
     /// input delimiter
@@ -24,7 +26,7 @@ struct Cli {
     #[arg(short = 'D', long)]
     output_delimiter: Option<char>,
 
-    /// Count zeros as null, in addition to always countint non-numbers as null
+    /// Count zeros as null, in addition to always counting non-numbers as null
     #[arg(short, long, default_value_t = false)]
     zero_as_null: bool,
 
