@@ -9,6 +9,7 @@ clap = { version = "4.0", features = ["derive"] }
 is-terminal = "0.4.12"
 streaming-stats = "0.2.3"
 cli-table = "0.4.7"
+itertools = "0.13.0"
 
 # [dev-dependencies]
 # approx = "0.5.1"
