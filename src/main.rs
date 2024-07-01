@@ -20,8 +20,8 @@ use string_stats::StringStats;
 type GroupNumberStats = HashMap<String, NumberStats>;
 type GroupStringStats = HashMap<String, (StringStats, NumberStats)>;
 
-/// Grouped number stats on stream (count, min, max, mean, stddev).
-/// Takes the last column of the provided data as the number value to analyze.
+/// Grouped number or string stats on stream (count, min, max, mean, stddev).
+/// Takes the last column of the provided data as the number (default) or string value to analyze.
 /// All preceding columns are interpreted as grouping data.
 #[derive(Parser)]
 struct Cli {
@@ -37,18 +37,13 @@ struct Cli {
     #[arg(short = 'r', long, default_value_t = 0)]
     decimals: usize,
 
-    /// Count zeros as null, in addition to always counting non-numbers as null
+    /// Count zeros as null in number mode. Count empty strings as null in string mode
     #[arg(short, long, default_value_t = false)]
-    zero_as_null: bool,
+    null: bool,
 
-    /// Interpret as strings, return stats about length and value
-    /// Default is to interpret as numbers
+    /// Interpret as strings instead of numbers (default), returns stats about length and value
     #[arg(short, long, default_value_t = false)]
     strings: bool,
-
-    /// Count empty strings as null, in addition to always countint non-numbers as null
-    #[arg(short, long, default_value_t = false)]
-    empty_as_null: bool,
 
     /// The path to the file to read, use - to read from stdin (must not be a tty)
     #[arg(default_value = "-")]
@@ -68,13 +63,13 @@ fn main() {
             group_string_stats_in_buf_reader(
                 BufReader::new(stdin().lock()),
                 args.input_delimiter,
-                args.empty_as_null,
+                args.null,
             )
         } else {
             group_string_stats_in_buf_reader(
                 BufReader::new(File::open(&file).unwrap()),
                 args.input_delimiter,
-                args.empty_as_null,
+                args.null,
             )
         };
         OutputStringData::new(
@@ -93,13 +88,13 @@ fn main() {
             group_number_stats_in_buf_reader(
                 BufReader::new(stdin().lock()),
                 args.input_delimiter,
-                args.zero_as_null,
+                args.null,
             )
         } else {
             group_number_stats_in_buf_reader(
                 BufReader::new(File::open(&file).unwrap()),
                 args.input_delimiter,
-                args.zero_as_null,
+                args.null,
             )
         };
         OutputNumberData::new(
