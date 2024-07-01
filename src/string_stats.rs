@@ -2,7 +2,8 @@ use cardinality_estimator::CardinalityEstimator;
 use stats::MinMax;
 
 pub struct StringStats {
-    null_count: usize,
+    empty_count: usize,
+    error_count: usize,
     min_max: MinMax<String>,
     cardinality_estimator: CardinalityEstimator<String>,
 }
@@ -10,7 +11,8 @@ pub struct StringStats {
 impl StringStats {
     pub fn new() -> Self {
         Self {
-            null_count: 0,
+            empty_count: 0,
+            error_count: 0,
             min_max: MinMax::new(),
             cardinality_estimator: CardinalityEstimator::new(),
         }
@@ -19,16 +21,22 @@ impl StringStats {
         self.cardinality_estimator.insert(&string);
         self.min_max.add(string);
     }
-    pub fn add_null(&mut self) {
-        self.null_count += 1;
+    pub fn add_empty(&mut self) {
+        self.empty_count += 1;
+    }
+    pub fn add_error(&mut self) {
+        self.error_count += 1;
     }
     #[allow(dead_code)]
     pub fn count(&self) -> usize {
         self.min_max.len()
     }
     #[allow(dead_code)]
-    pub fn null_count(&self) -> usize {
-        self.null_count
+    pub fn empty_count(&self) -> usize {
+        self.empty_count
+    }
+    pub fn error_count(&self) -> usize {
+        self.error_count
     }
     pub fn min(&self) -> Option<String> {
         self.min_max.min().cloned()
@@ -49,7 +57,8 @@ mod tests {
     fn test_new() {
         let stats = StringStats::new();
         assert_eq!(stats.count(), 0);
-        assert_eq!(stats.null_count(), 0);
+        assert_eq!(stats.empty_count(), 0);
+        assert_eq!(stats.error_count(), 0);
         assert_eq!(stats.min(), None);
         assert_eq!(stats.max(), None);
     }
@@ -64,10 +73,10 @@ mod tests {
     }
 
     #[test]
-    fn test_add_null() {
+    fn test_add_empty() {
         let mut stats = StringStats::new();
-        stats.add_null();
-        assert_eq!(stats.null_count(), 1);
+        stats.add_empty();
+        assert_eq!(stats.empty_count(), 1);
     }
 
     #[test]
@@ -87,7 +96,8 @@ mod string_stats_tests {
     fn test_new() {
         let stats = StringStats::new();
         assert_eq!(stats.count(), 0);
-        assert_eq!(stats.null_count(), 0);
+        assert_eq!(stats.empty_count(), 0);
+        assert_eq!(stats.error_count(), 0);
         assert_eq!(stats.min(), None);
         assert_eq!(stats.max(), None);
     }
@@ -102,10 +112,17 @@ mod string_stats_tests {
     }
 
     #[test]
-    fn test_add_null() {
+    fn test_add_empty() {
         let mut stats = StringStats::new();
-        stats.add_null();
-        assert_eq!(stats.null_count(), 1);
+        stats.add_empty();
+        assert_eq!(stats.empty_count(), 1);
+    }
+
+    #[test]
+    fn test_add_error() {
+        let mut stats = StringStats::new();
+        stats.add_error();
+        assert_eq!(stats.error_count(), 1);
     }
 
     #[test]

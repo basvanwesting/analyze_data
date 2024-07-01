@@ -23,10 +23,12 @@ impl OutputCsvData {
             .map(|(header, string_stats, number_stats, length_stats)| {
                 let stats_data = vec![
                     format!("{}", string_stats.count()),
-                    format!("{}", string_stats.null_count()),
                     format!("{}", string_stats.cardinality()),
+                    format!("{}", string_stats.empty_count()),
                     format!("{}", string_stats.min().unwrap_or("".to_string())),
                     format!("{}", string_stats.max().unwrap_or("".to_string())),
+                    format!("{}", number_stats.empty_count()),
+                    format!("{}", number_stats.error_count()),
                     format!("{:.*}", decimals, number_stats.min().unwrap_or(0.0),),
                     format!("{:.*}", decimals, number_stats.max().unwrap_or(0.0),),
                     format!("{:.*}", decimals, number_stats.mean()),
@@ -68,10 +70,12 @@ impl OutputCsvData {
             .collect();
         let mut number_title: Vec<CellStruct> = vec![
             "Count".cell().justify(Justify::Right).bold(true),
-            "NULL".cell().justify(Justify::Right).bold(true),
             "Cardinality".cell().justify(Justify::Right).bold(true),
+            "String Empty".cell().justify(Justify::Right).bold(true),
             "String Min".cell().justify(Justify::Right).bold(true),
             "String Max".cell().justify(Justify::Right).bold(true),
+            "Number Empty".cell().justify(Justify::Right).bold(true),
+            "Number Error".cell().justify(Justify::Right).bold(true),
             "Number Min".cell().justify(Justify::Right).bold(true),
             "Number Max".cell().justify(Justify::Right).bold(true),
             "Number Mean".cell().justify(Justify::Right).bold(true),
@@ -112,10 +116,12 @@ impl OutputCsvData {
             delimiter.repeat(self.group_length),
             [
                 "count",
-                "null",
                 "cardinality",
+                "string_empty",
                 "string_min",
                 "string_max",
+                "number_empty",
+                "number_error",
                 "number_min",
                 "number_max",
                 "number_mean",

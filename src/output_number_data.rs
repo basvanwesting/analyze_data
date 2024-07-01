@@ -29,7 +29,8 @@ impl OutputNumberData {
                     .collect();
                 let stats_data = vec![
                     format!("{}", number_stats.count()),
-                    format!("{}", number_stats.null_count()),
+                    format!("{}", number_stats.empty_count()),
+                    format!("{}", number_stats.error_count()),
                     format!("{:.*}", decimals, number_stats.min().unwrap_or(0.0),),
                     format!("{:.*}", decimals, number_stats.max().unwrap_or(0.0),),
                     format!("{:.*}", decimals, number_stats.mean()),
@@ -67,7 +68,8 @@ impl OutputNumberData {
             .collect();
         let mut number_title: Vec<CellStruct> = vec![
             "Count".cell().justify(Justify::Right).bold(true),
-            "NULL".cell().justify(Justify::Right).bold(true),
+            "Empty".cell().justify(Justify::Right).bold(true),
+            "Error".cell().justify(Justify::Right).bold(true),
             "Min".cell().justify(Justify::Right).bold(true),
             "Max".cell().justify(Justify::Right).bold(true),
             "Mean".cell().justify(Justify::Right).bold(true),
@@ -102,7 +104,7 @@ impl OutputNumberData {
         println!(
             "{}{}",
             delimiter.repeat(self.group_length),
-            ["count", "null", "min", "max", "mean", "stddev"].join(&delimiter)
+            ["count", "empty", "error", "min", "max", "mean", "stddev"].join(&delimiter)
         );
         for row in self.output_rows.iter() {
             println!(

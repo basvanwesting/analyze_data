@@ -40,17 +40,17 @@ struct Cli {
     #[arg(short = 'r', long, default_value_t = 0)]
     decimals: usize,
 
-    /// Count zeros as null in number mode. Count empty strings as null in string mode
+    /// Count zeros as empty in number mode.
     #[arg(short, long, default_value_t = false)]
-    null: bool,
-
-    /// Interpret as strings instead of numbers (default), returns stats about length and value
-    #[arg(short, long, default_value_t = false)]
-    strings: bool,
+    zero_as_empty: bool,
 
     /// Interpret the data as CSV, making the headers the groups
     #[arg(short, long, default_value_t = false)]
     csv: bool,
+
+    /// Interpret as strings instead of numbers (default), returns stats about length and value
+    #[arg(short, long, default_value_t = false)]
+    strings: bool,
 
     /// The path to the file to read, use - to read from stdin (must not be a tty)
     #[arg(default_value = "-")]
@@ -70,13 +70,13 @@ fn main() {
             csv_stats_in_buf_reader(
                 BufReader::new(stdin().lock()),
                 args.input_delimiter,
-                args.null,
+                args.zero_as_empty,
             )
         } else {
             csv_stats_in_buf_reader(
                 BufReader::new(File::open(&file).unwrap()),
                 args.input_delimiter,
-                args.null,
+                args.zero_as_empty,
             )
         };
         OutputCsvData::new(
@@ -95,13 +95,13 @@ fn main() {
             group_string_stats_in_buf_reader(
                 BufReader::new(stdin().lock()),
                 args.input_delimiter,
-                args.null,
+                args.zero_as_empty,
             )
         } else {
             group_string_stats_in_buf_reader(
                 BufReader::new(File::open(&file).unwrap()),
                 args.input_delimiter,
-                args.null,
+                args.zero_as_empty,
             )
         };
         OutputStringData::new(
@@ -120,13 +120,13 @@ fn main() {
             group_number_stats_in_buf_reader(
                 BufReader::new(stdin().lock()),
                 args.input_delimiter,
-                args.null,
+                args.zero_as_empty,
             )
         } else {
             group_number_stats_in_buf_reader(
                 BufReader::new(File::open(&file).unwrap()),
                 args.input_delimiter,
-                args.null,
+                args.zero_as_empty,
             )
         };
         OutputNumberData::new(
@@ -142,7 +142,7 @@ fn main() {
 fn group_number_stats_in_buf_reader<R: BufRead>(
     buf_reader: R,
     delimiter: char,
-    zero_as_null: bool,
+    zero_as_empty: bool,
 ) -> GroupNumberStats {
     let mut group_number_stats = GroupNumberStats::new();
     for line in buf_reader.lines() {
@@ -152,16 +152,20 @@ fn group_number_stats_in_buf_reader<R: BufRead>(
                 let number_stats = group_number_stats
                     .entry(group.to_string())
                     .or_insert(NumberStats::new());
-                match value.parse::<f64>() {
-                    Ok(num) if zero_as_null && num == 0.0 => number_stats.add_null(),
-                    Ok(num) => number_stats.add(num),
-                    Err(_) => number_stats.add_null(),
-                };
+                if value.is_empty() {
+                    number_stats.add_empty();
+                } else {
+                    match value.parse::<f64>() {
+                        Ok(num) if zero_as_empty && num == 0.0 => number_stats.add_empty(),
+                        Ok(num) => number_stats.add(num),
+                        Err(_) => number_stats.add_error(),
+                    };
+                }
             }
             None => {
                 group_number_stats
                     .entry("<INVALID>".to_string())
-                    .and_modify(|number_stats| number_stats.add_null())
+                    .and_modify(|number_stats| number_stats.add_error())
                     .or_insert(NumberStats::new());
             }
         }
@@ -172,7 +176,7 @@ fn group_number_stats_in_buf_reader<R: BufRead>(
 fn group_string_stats_in_buf_reader<R: BufRead>(
     buf_reader: R,
     delimiter: char,
-    empty_as_null: bool,
+    _zero_as_empty: bool,
 ) -> GroupStringStats {
     let mut group_string_stats = GroupStringStats::new();
     for line in buf_reader.lines() {
@@ -183,18 +187,18 @@ fn group_string_stats_in_buf_reader<R: BufRead>(
                     .entry(group.to_string())
                     .or_insert((StringStats::new(), NumberStats::new()));
 
-                if empty_as_null && value.is_empty() {
-                    length_stats.add_null();
-                    value_stats.add_null();
+                if value.is_empty() {
+                    value_stats.add_empty();
+                    length_stats.add_empty();
                 } else {
-                    length_stats.add(value.len() as f64);
                     value_stats.add(value.to_string());
+                    length_stats.add(value.len() as f64);
                 };
             }
             None => {
                 group_string_stats
                     .entry("<INVALID>".to_string())
-                    .and_modify(|(value_stats, _length_stats)| value_stats.add_null())
+                    .and_modify(|(value_stats, _length_stats)| value_stats.add_error())
                     .or_insert((StringStats::new(), NumberStats::new()));
             }
         }
@@ -205,7 +209,7 @@ fn group_string_stats_in_buf_reader<R: BufRead>(
 fn csv_stats_in_buf_reader<R: BufRead>(
     buf_reader: R,
     delimiter: char,
-    zero_or_empty_as_null: bool,
+    zero_as_empty: bool,
 ) -> CsvStats {
     let mut lines_iter = buf_reader.lines();
     let headers: Vec<String> = lines_iter
@@ -232,17 +236,17 @@ fn csv_stats_in_buf_reader<R: BufRead>(
         for ((_header, string_stats, number_stats, length_stats), value) in
             csv_stats.iter_mut().zip(line.unwrap().split(delimiter))
         {
-            if zero_or_empty_as_null && value.is_empty() {
-                string_stats.add_null();
-                length_stats.add_null();
-                number_stats.add_null();
+            if value.is_empty() {
+                string_stats.add_empty();
+                length_stats.add_empty();
+                number_stats.add_empty();
             } else {
                 string_stats.add(value.to_string());
                 length_stats.add(value.len() as f64);
                 match value.parse::<f64>() {
-                    Ok(num) if zero_or_empty_as_null && num == 0.0 => number_stats.add_null(),
+                    Ok(num) if zero_as_empty && num == 0.0 => number_stats.add_empty(),
                     Ok(num) => number_stats.add(num),
-                    Err(_) => number_stats.add_null(),
+                    Err(_) => number_stats.add_error(),
                 };
             };
         }

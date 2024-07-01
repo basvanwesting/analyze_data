@@ -1,7 +1,8 @@
 use stats::{MinMax, OnlineStats};
 
 pub struct NumberStats {
-    null_count: usize,
+    empty_count: usize,
+    error_count: usize,
     online_stats: OnlineStats,
     min_max: MinMax<f64>,
 }
@@ -9,7 +10,8 @@ pub struct NumberStats {
 impl NumberStats {
     pub fn new() -> Self {
         Self {
-            null_count: 0,
+            empty_count: 0,
+            error_count: 0,
             online_stats: OnlineStats::new(),
             min_max: MinMax::new(),
         }
@@ -18,14 +20,20 @@ impl NumberStats {
         self.online_stats.add(num);
         self.min_max.add(num);
     }
-    pub fn add_null(&mut self) {
-        self.null_count += 1;
+    pub fn add_empty(&mut self) {
+        self.empty_count += 1;
+    }
+    pub fn add_error(&mut self) {
+        self.error_count += 1;
     }
     pub fn count(&self) -> usize {
         self.min_max.len()
     }
-    pub fn null_count(&self) -> usize {
-        self.null_count
+    pub fn empty_count(&self) -> usize {
+        self.empty_count
+    }
+    pub fn error_count(&self) -> usize {
+        self.error_count
     }
     pub fn min(&self) -> Option<f64> {
         self.min_max.min().copied()
@@ -49,7 +57,8 @@ mod tests {
     fn test_new() {
         let stats = NumberStats::new();
         assert_eq!(stats.count(), 0);
-        assert_eq!(stats.null_count(), 0);
+        assert_eq!(stats.empty_count(), 0);
+        assert_eq!(stats.error_count(), 0);
         assert_eq!(stats.min(), None);
         assert_eq!(stats.max(), None);
         assert_eq!(stats.mean(), 0.0);
@@ -69,9 +78,16 @@ mod tests {
     }
 
     #[test]
-    fn test_add_null() {
+    fn test_add_empty() {
         let mut stats = NumberStats::new();
-        stats.add_null();
-        assert_eq!(stats.null_count(), 1);
+        stats.add_empty();
+        assert_eq!(stats.empty_count(), 1);
+    }
+
+    #[test]
+    fn test_add_error() {
+        let mut stats = NumberStats::new();
+        stats.add_error();
+        assert_eq!(stats.error_count(), 1);
     }
 }

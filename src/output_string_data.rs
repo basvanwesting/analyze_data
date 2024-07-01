@@ -29,7 +29,7 @@ impl OutputStringData {
                     .collect();
                 let stats_data = vec![
                     format!("{}", value_stats.count()),
-                    format!("{}", value_stats.null_count()),
+                    format!("{}", value_stats.empty_count()),
                     format!("{}", value_stats.cardinality()),
                     format!("{}", value_stats.min().unwrap_or("".to_string())),
                     format!("{}", value_stats.max().unwrap_or("".to_string())),
@@ -70,7 +70,7 @@ impl OutputStringData {
             .collect();
         let mut number_title: Vec<CellStruct> = vec![
             "Count".cell().justify(Justify::Right).bold(true),
-            "NULL".cell().justify(Justify::Right).bold(true),
+            "Empty".cell().justify(Justify::Right).bold(true),
             "Cardinality".cell().justify(Justify::Right).bold(true),
             "String Min".cell().justify(Justify::Right).bold(true),
             "String Max".cell().justify(Justify::Right).bold(true),
@@ -110,7 +110,7 @@ impl OutputStringData {
             delimiter.repeat(self.group_length),
             [
                 "count",
-                "null",
+                "empty",
                 "cardinality",
                 "string_min",
                 "string_max",
