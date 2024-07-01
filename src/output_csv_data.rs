@@ -1,44 +1,42 @@
 use crate::output_row::OutputRow;
-use crate::GroupStringStats;
+use crate::CsvStats;
 use cli_table::{
     format::{HorizontalLine, Justify, Separator, VerticalLine},
     print_stdout, Cell, CellStruct, Style, Table,
 };
-use itertools::Itertools;
 
-pub struct OutputStringData {
+pub struct OutputCsvData {
     output_rows: Vec<OutputRow>,
     group_length: usize,
     output_delimiter: Option<char>,
 }
 
-impl OutputStringData {
+impl OutputCsvData {
     pub fn new(
-        group_stats: GroupStringStats,
-        input_delimiter: char,
+        csv_stats: CsvStats,
+        _input_delimiter: char,
         output_delimiter: Option<char>,
         decimals: usize,
     ) -> Self {
-        let output_rows: Vec<OutputRow> = group_stats
+        let output_rows: Vec<OutputRow> = csv_stats
             .into_iter()
-            .sorted_by(|a, b| Ord::cmp(&b.0, &a.0))
-            .map(|(group, (value_stats, length_stats))| {
-                let group_data: Vec<String> = group
-                    .split(input_delimiter)
-                    .map(|v| v.to_string())
-                    .collect();
+            .map(|(header, string_stats, number_stats, length_stats)| {
                 let stats_data = vec![
-                    format!("{}", value_stats.count()),
-                    format!("{}", value_stats.null_count()),
-                    format!("{}", value_stats.cardinality()),
-                    format!("{}", value_stats.min().unwrap_or("".to_string())),
-                    format!("{}", value_stats.max().unwrap_or("".to_string())),
+                    format!("{}", string_stats.count()),
+                    format!("{}", string_stats.null_count()),
+                    format!("{}", string_stats.cardinality()),
+                    format!("{}", string_stats.min().unwrap_or("".to_string())),
+                    format!("{}", string_stats.max().unwrap_or("".to_string())),
+                    format!("{:.*}", decimals, number_stats.min().unwrap_or(0.0),),
+                    format!("{:.*}", decimals, number_stats.max().unwrap_or(0.0),),
+                    format!("{:.*}", decimals, number_stats.mean()),
+                    format!("{:.*}", decimals, number_stats.stddev()),
                     format!("{:.*}", 0, length_stats.min().unwrap_or(0.0),),
                     format!("{:.*}", 0, length_stats.max().unwrap_or(0.0),),
                     format!("{:.*}", decimals, length_stats.mean()),
                     format!("{:.*}", decimals, length_stats.stddev()),
                 ];
-                OutputRow::new(group_data, stats_data)
+                OutputRow::new([header].to_vec(), stats_data)
             })
             .collect();
         let group_length = output_rows.first().unwrap().group_data.len();
@@ -74,6 +72,10 @@ impl OutputStringData {
             "Cardinality".cell().justify(Justify::Right).bold(true),
             "String Min".cell().justify(Justify::Right).bold(true),
             "String Max".cell().justify(Justify::Right).bold(true),
+            "Number Min".cell().justify(Justify::Right).bold(true),
+            "Number Max".cell().justify(Justify::Right).bold(true),
+            "Number Mean".cell().justify(Justify::Right).bold(true),
+            "Number StdDev".cell().justify(Justify::Right).bold(true),
             "Length Min".cell().justify(Justify::Right).bold(true),
             "Length Max".cell().justify(Justify::Right).bold(true),
             "Length Mean".cell().justify(Justify::Right).bold(true),
@@ -114,6 +116,10 @@ impl OutputStringData {
                 "cardinality",
                 "string_min",
                 "string_max",
+                "number_min",
+                "number_max",
+                "number_mean",
+                "number_stddev",
                 "length_min",
                 "length_max",
                 "length_mean",
