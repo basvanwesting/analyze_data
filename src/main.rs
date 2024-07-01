@@ -47,8 +47,8 @@ struct Cli {
     output_delimiter: Option<char>,
 
     /// Optional number of decimals to round for output
-    #[arg(short = 'r', long, default_value_t = 0)]
-    decimals: usize,
+    #[arg(short, long, default_value_t = 0)]
+    precision: usize,
 
     /// Count zeros as empty when parsing numbers
     #[arg(short, long, default_value_t = false)]
@@ -90,7 +90,7 @@ fn main() {
                 csv_stats,
                 args.input_delimiter,
                 args.output_delimiter,
-                args.decimals,
+                args.precision,
             )
             .print();
         }
@@ -117,7 +117,7 @@ fn main() {
                 group_string_stats,
                 args.input_delimiter,
                 args.output_delimiter,
-                args.decimals,
+                args.precision,
             )
             .print();
         }
@@ -144,7 +144,7 @@ fn main() {
                 group_number_stats,
                 args.input_delimiter,
                 args.output_delimiter,
-                args.decimals,
+                args.precision,
             )
             .print();
         }
