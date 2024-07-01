@@ -14,12 +14,12 @@ pub struct OutputStringData {
 
 impl OutputStringData {
     pub fn new(
-        group_stats: GroupStringStats,
+        group_string_stats: GroupStringStats,
         input_delimiter: char,
         output_delimiter: Option<char>,
         decimals: usize,
     ) -> Self {
-        let output_rows: Vec<OutputRow> = group_stats
+        let output_rows: Vec<OutputRow> = group_string_stats
             .into_iter()
             .sorted_by(|a, b| Ord::cmp(&b.0, &a.0))
             .map(|(group, (value_stats, length_stats))| {

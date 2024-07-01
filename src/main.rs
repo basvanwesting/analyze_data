@@ -33,9 +33,7 @@ enum Mode {
     Csv,
 }
 
-/// Grouped number or string stats on stream (count, min, max, mean, stddev).
-/// Takes the last column of the provided data as the number (default) or string value to analyze.
-/// All preceding columns are interpreted as grouping data.
+/// Analyze data from stream or file
 #[derive(Parser)]
 struct Cli {
     /// input delimiter

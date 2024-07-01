@@ -3,6 +3,18 @@
 version = 3
 
 [[package]]
+name = "analyze_data"
+version = "0.1.0"
+dependencies = [
+ "cardinality-estimator",
+ "clap",
+ "cli-table",
+ "is-terminal",
+ "itertools",
+ "streaming-stats",
+]
+
+[[package]]
 name = "anstream"
 version = "0.6.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -173,18 +185,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.66",
-]
-
-[[package]]
-name = "group_stats"
-version = "0.1.0"
-dependencies = [
- "cardinality-estimator",
- "clap",
- "cli-table",
- "is-terminal",
- "itertools",
- "streaming-stats",
 ]
 
 [[package]]
