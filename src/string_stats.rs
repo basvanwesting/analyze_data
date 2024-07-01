@@ -35,6 +35,7 @@ impl StringStats {
     pub fn empty_count(&self) -> usize {
         self.empty_count
     }
+    #[allow(dead_code)]
     pub fn error_count(&self) -> usize {
         self.error_count
     }

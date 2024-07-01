@@ -5,7 +5,7 @@ mod output_row;
 mod output_string_data;
 mod string_stats;
 
-use clap::{CommandFactory, Parser};
+use clap::{CommandFactory, Parser, ValueEnum};
 use is_terminal::IsTerminal as _;
 use number_stats::NumberStats;
 use output_csv_data::OutputCsvData;
@@ -22,6 +22,16 @@ use string_stats::StringStats;
 type GroupNumberStats = HashMap<String, NumberStats>;
 type GroupStringStats = HashMap<String, (StringStats, NumberStats)>;
 type CsvStats = Vec<(String, StringStats, NumberStats, NumberStats)>;
+
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+enum Mode {
+    /// Run stats on last column as number and interpret preceding columns as group
+    Number,
+    /// Run stats on last column as string and interpret preceding columns as group
+    String,
+    /// Interpret input as CSV with headers and run stats for all
+    Csv,
+}
 
 /// Grouped number or string stats on stream (count, min, max, mean, stddev).
 /// Takes the last column of the provided data as the number (default) or string value to analyze.
@@ -40,17 +50,13 @@ struct Cli {
     #[arg(short = 'r', long, default_value_t = 0)]
     decimals: usize,
 
-    /// Count zeros as empty in number mode.
+    /// Count zeros as empty when parsing numbers
     #[arg(short, long, default_value_t = false)]
     zero_as_empty: bool,
 
-    /// Interpret the data as CSV, making the headers the groups
-    #[arg(short, long, default_value_t = false)]
-    csv: bool,
-
-    /// Interpret as strings instead of numbers (default), returns stats about length and value
-    #[arg(short, long, default_value_t = false)]
-    strings: bool,
+    /// What mode to run the program in
+    #[arg(value_enum, default_value = "number")]
+    mode: Mode,
 
     /// The path to the file to read, use - to read from stdin (must not be a tty)
     #[arg(default_value = "-")]
@@ -61,81 +67,87 @@ fn main() {
     let args = Cli::parse();
     let file = args.file;
 
-    if args.csv {
-        let csv_stats = if file == PathBuf::from("-") {
-            if stdin().is_terminal() {
-                Cli::command().print_help().unwrap();
-                ::std::process::exit(2);
-            }
-            csv_stats_in_buf_reader(
-                BufReader::new(stdin().lock()),
+    match args.mode {
+        Mode::Csv => {
+            let csv_stats = if file == PathBuf::from("-") {
+                if stdin().is_terminal() {
+                    Cli::command().print_help().unwrap();
+                    ::std::process::exit(2);
+                }
+                csv_stats_in_buf_reader(
+                    BufReader::new(stdin().lock()),
+                    args.input_delimiter,
+                    args.zero_as_empty,
+                )
+            } else {
+                csv_stats_in_buf_reader(
+                    BufReader::new(File::open(&file).unwrap()),
+                    args.input_delimiter,
+                    args.zero_as_empty,
+                )
+            };
+            OutputCsvData::new(
+                csv_stats,
                 args.input_delimiter,
-                args.zero_as_empty,
+                args.output_delimiter,
+                args.decimals,
             )
-        } else {
-            csv_stats_in_buf_reader(
-                BufReader::new(File::open(&file).unwrap()),
+            .print();
+        }
+
+        Mode::String => {
+            let group_string_stats = if file == PathBuf::from("-") {
+                if stdin().is_terminal() {
+                    Cli::command().print_help().unwrap();
+                    ::std::process::exit(2);
+                }
+                group_string_stats_in_buf_reader(
+                    BufReader::new(stdin().lock()),
+                    args.input_delimiter,
+                    args.zero_as_empty,
+                )
+            } else {
+                group_string_stats_in_buf_reader(
+                    BufReader::new(File::open(&file).unwrap()),
+                    args.input_delimiter,
+                    args.zero_as_empty,
+                )
+            };
+            OutputStringData::new(
+                group_string_stats,
                 args.input_delimiter,
-                args.zero_as_empty,
+                args.output_delimiter,
+                args.decimals,
             )
-        };
-        OutputCsvData::new(
-            csv_stats,
-            args.input_delimiter,
-            args.output_delimiter,
-            args.decimals,
-        )
-        .print();
-    } else if args.strings {
-        let group_string_stats = if file == PathBuf::from("-") {
-            if stdin().is_terminal() {
-                Cli::command().print_help().unwrap();
-                ::std::process::exit(2);
-            }
-            group_string_stats_in_buf_reader(
-                BufReader::new(stdin().lock()),
+            .print();
+        }
+
+        Mode::Number => {
+            let group_number_stats = if file == PathBuf::from("-") {
+                if stdin().is_terminal() {
+                    Cli::command().print_help().unwrap();
+                    ::std::process::exit(2);
+                }
+                group_number_stats_in_buf_reader(
+                    BufReader::new(stdin().lock()),
+                    args.input_delimiter,
+                    args.zero_as_empty,
+                )
+            } else {
+                group_number_stats_in_buf_reader(
+                    BufReader::new(File::open(&file).unwrap()),
+                    args.input_delimiter,
+                    args.zero_as_empty,
+                )
+            };
+            OutputNumberData::new(
+                group_number_stats,
                 args.input_delimiter,
-                args.zero_as_empty,
+                args.output_delimiter,
+                args.decimals,
             )
-        } else {
-            group_string_stats_in_buf_reader(
-                BufReader::new(File::open(&file).unwrap()),
-                args.input_delimiter,
-                args.zero_as_empty,
-            )
-        };
-        OutputStringData::new(
-            group_string_stats,
-            args.input_delimiter,
-            args.output_delimiter,
-            args.decimals,
-        )
-        .print();
-    } else {
-        let group_number_stats = if file == PathBuf::from("-") {
-            if stdin().is_terminal() {
-                Cli::command().print_help().unwrap();
-                ::std::process::exit(2);
-            }
-            group_number_stats_in_buf_reader(
-                BufReader::new(stdin().lock()),
-                args.input_delimiter,
-                args.zero_as_empty,
-            )
-        } else {
-            group_number_stats_in_buf_reader(
-                BufReader::new(File::open(&file).unwrap()),
-                args.input_delimiter,
-                args.zero_as_empty,
-            )
-        };
-        OutputNumberData::new(
-            group_number_stats,
-            args.input_delimiter,
-            args.output_delimiter,
-            args.decimals,
-        )
-        .print();
+            .print();
+        }
     }
 }
 

@@ -26,12 +26,15 @@ impl NumberStats {
     pub fn add_error(&mut self) {
         self.error_count += 1;
     }
+    #[allow(dead_code)]
     pub fn count(&self) -> usize {
         self.min_max.len()
     }
+    #[allow(dead_code)]
     pub fn empty_count(&self) -> usize {
         self.empty_count
     }
+    #[allow(dead_code)]
     pub fn error_count(&self) -> usize {
         self.error_count
     }
