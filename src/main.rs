@@ -46,10 +46,6 @@ struct Cli {
     #[arg(short, long, default_value_t = false)]
     strings: bool,
 
-    /// Optional cap on cardinality, set to zero to disable cardinality
-    #[arg(short, long)]
-    cardinality_cap: Option<usize>,
-
     /// Count empty strings as null, in addition to always countint non-numbers as null
     #[arg(short, long, default_value_t = false)]
     empty_as_null: bool,
@@ -73,14 +69,12 @@ fn main() {
                 BufReader::new(stdin().lock()),
                 args.input_delimiter,
                 args.empty_as_null,
-                args.cardinality_cap,
             )
         } else {
             group_string_stats_in_buf_reader(
                 BufReader::new(File::open(&file).unwrap()),
                 args.input_delimiter,
                 args.empty_as_null,
-                args.cardinality_cap,
             )
         };
         OutputStringData::new(
@@ -88,7 +82,6 @@ fn main() {
             args.input_delimiter,
             args.output_delimiter,
             args.decimals,
-            args.cardinality_cap,
         )
         .print();
     } else {
@@ -153,7 +146,6 @@ fn group_string_stats_in_buf_reader<R: BufRead>(
     buf_reader: R,
     delimiter: char,
     empty_as_null: bool,
-    cardinality_cap: Option<usize>,
 ) -> GroupStringStats {
     let mut group_string_stats = GroupStringStats::new();
     for line in buf_reader.lines() {
@@ -162,7 +154,7 @@ fn group_string_stats_in_buf_reader<R: BufRead>(
             Some((group, value)) => {
                 let (value_stats, length_stats) = group_string_stats
                     .entry(group.to_string())
-                    .or_insert((StringStats::new(cardinality_cap), NumberStats::new()));
+                    .or_insert((StringStats::new(), NumberStats::new()));
 
                 if empty_as_null && value.is_empty() {
                     length_stats.add_null();
@@ -176,7 +168,7 @@ fn group_string_stats_in_buf_reader<R: BufRead>(
                 group_string_stats
                     .entry("<INVALID>".to_string())
                     .and_modify(|(value_stats, _length_stats)| value_stats.add_null())
-                    .or_insert((StringStats::new(cardinality_cap), NumberStats::new()));
+                    .or_insert((StringStats::new(), NumberStats::new()));
             }
         }
     }

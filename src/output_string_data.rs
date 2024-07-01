@@ -18,7 +18,6 @@ impl OutputStringData {
         input_delimiter: char,
         output_delimiter: Option<char>,
         decimals: usize,
-        cardinality_cap: Option<usize>,
     ) -> Self {
         let output_rows: Vec<OutputRow> = group_stats
             .into_iter()
@@ -33,17 +32,7 @@ impl OutputStringData {
                     format!("{}", value_stats.null_count()),
                     format!("{}", value_stats.min().unwrap_or("".to_string())),
                     format!("{}", value_stats.max().unwrap_or("".to_string())),
-                    if let Some(cap) = cardinality_cap {
-                        if cap == 0 {
-                            format!("disabled")
-                        } else if value_stats.is_cardinality_capped() {
-                            format!("{}+", cap)
-                        } else {
-                            format!("{}", value_stats.cardinality())
-                        }
-                    } else {
-                        format!("{}", value_stats.cardinality())
-                    },
+                    format!("{}", value_stats.cardinality()),
                     format!("{:.*}", 0, length_stats.min().unwrap_or(0.0),),
                     format!("{:.*}", 0, length_stats.max().unwrap_or(0.0),),
                     format!("{:.*}", decimals, length_stats.mean()),
