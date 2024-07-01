@@ -1,6 +1,6 @@
-Grouped number stats on stream (count, min, max, mean, stddev). \
-Takes the last column of the provided data as the number value to analyze. \
-All preceding columns are interpreted as grouping data
+Grouped number or string stats on stream (count, min, max, mean, stddev). \ 
+Takes the last column of the provided data as the number (default) or string value to analyze. \
+All preceding columns are interpreted as grouping data.
 
 ```
 Usage: group_stats [OPTIONS] --input-delimiter <INPUT_DELIMITER> [FILE]
@@ -13,10 +13,12 @@ Options:
           input delimiter
   -D, --output-delimiter <OUTPUT_DELIMITER>
           Optional output delimiter, default to human readable table output
-  -z, --zero-as-null
-          Count zeros as null, in addition to always counting non-numbers as null
   -r, --decimals <DECIMALS>
           Optional number of decimals to round for output [default: 0]
+  -n, --null
+          Count zeros as null in number mode. Count empty strings as null in string mode
+  -s, --strings
+          Interpret as strings instead of numbers (default), returns stats about length and value
   -h, --help
           Print help
 ```
