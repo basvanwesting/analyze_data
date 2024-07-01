@@ -45,6 +45,10 @@ struct Cli {
     #[arg(short, long, default_value_t = false)]
     strings: bool,
 
+    /// Interpret the data as CSV, making the headers the groups
+    #[arg(short, long, default_value_t = false)]
+    csv: bool,
+
     /// The path to the file to read, use - to read from stdin (must not be a tty)
     #[arg(default_value = "-")]
     file: PathBuf,
@@ -54,7 +58,32 @@ fn main() {
     let args = Cli::parse();
     let file = args.file;
 
-    if args.strings {
+    if args.csv {
+        let group_string_stats = if file == PathBuf::from("-") {
+            if stdin().is_terminal() {
+                Cli::command().print_help().unwrap();
+                ::std::process::exit(2);
+            }
+            csv_string_stats_in_buf_reader(
+                BufReader::new(stdin().lock()),
+                args.input_delimiter,
+                args.null,
+            )
+        } else {
+            csv_string_stats_in_buf_reader(
+                BufReader::new(File::open(&file).unwrap()),
+                args.input_delimiter,
+                args.null,
+            )
+        };
+        OutputStringData::new(
+            group_string_stats,
+            args.input_delimiter,
+            args.output_delimiter,
+            args.decimals,
+        )
+        .print();
+    } else if args.strings {
         let group_string_stats = if file == PathBuf::from("-") {
             if stdin().is_terminal() {
                 Cli::command().print_help().unwrap();
@@ -165,6 +194,39 @@ fn group_string_stats_in_buf_reader<R: BufRead>(
                     .and_modify(|(value_stats, _length_stats)| value_stats.add_null())
                     .or_insert((StringStats::new(), NumberStats::new()));
             }
+        }
+    }
+    group_string_stats
+}
+
+fn csv_string_stats_in_buf_reader<R: BufRead>(
+    buf_reader: R,
+    delimiter: char,
+    empty_as_null: bool,
+) -> GroupStringStats {
+    let mut group_string_stats = GroupStringStats::new();
+    let mut lines_iter = buf_reader.lines();
+    let headers: Vec<String> = lines_iter
+        .next()
+        .unwrap()
+        .expect("REASON")
+        .split(delimiter)
+        .map(|v| v.to_string())
+        .collect();
+
+    for line in lines_iter {
+        for (header, value) in headers.iter().zip(line.unwrap().split(delimiter)) {
+            let (value_stats, length_stats) = group_string_stats
+                .entry(header.to_string())
+                .or_insert((StringStats::new(), NumberStats::new()));
+
+            if empty_as_null && value.is_empty() {
+                length_stats.add_null();
+                value_stats.add_null();
+            } else {
+                length_stats.add(value.len() as f64);
+                value_stats.add(value.to_string());
+            };
         }
     }
     group_string_stats
