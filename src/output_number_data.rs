@@ -6,13 +6,13 @@ use cli_table::{
 };
 use itertools::Itertools;
 
-pub struct OutputData {
+pub struct OutputNumberData {
     output_rows: Vec<OutputRow>,
     group_length: usize,
     output_delimiter: Option<char>,
 }
 
-impl OutputData {
+impl OutputNumberData {
     pub fn new(
         group_stats: GroupNumberStats,
         input_delimiter: char,
@@ -27,7 +27,7 @@ impl OutputData {
                     .split(input_delimiter)
                     .map(|v| v.to_string())
                     .collect();
-                let number_data = vec![
+                let stats_data = vec![
                     format!("{}", number_stats.count()),
                     format!("{}", number_stats.null_count()),
                     format!("{:.*}", decimals, number_stats.min().unwrap_or(0.0),),
@@ -35,7 +35,7 @@ impl OutputData {
                     format!("{:.*}", decimals, number_stats.mean()),
                     format!("{:.*}", decimals, number_stats.stddev()),
                 ];
-                OutputRow::new(group_data, number_data)
+                OutputRow::new(group_data, stats_data)
             })
             .collect();
         let group_length = output_rows.first().unwrap().group_data.len();
@@ -82,7 +82,7 @@ impl OutputData {
                 let mut group_data: Vec<CellStruct> =
                     output_row.group_data.iter().map(|v| v.cell()).collect();
                 let mut number_data: Vec<CellStruct> = output_row
-                    .number_data
+                    .stats_data
                     .iter()
                     .map(|v| v.cell().justify(Justify::Right))
                     .collect();
@@ -109,7 +109,7 @@ impl OutputData {
                 "{}{}{}",
                 row.group_data.join(&delimiter),
                 delimiter,
-                row.number_data.join(&delimiter)
+                row.stats_data.join(&delimiter)
             );
         }
     }
