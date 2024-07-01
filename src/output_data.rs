@@ -1,11 +1,10 @@
-use crate::number_stats::NumberStats;
 use crate::output_row::OutputRow;
+use crate::GroupNumberStats;
 use cli_table::{
     format::{HorizontalLine, Justify, Separator, VerticalLine},
     print_stdout, Cell, CellStruct, Style, Table,
 };
 use itertools::Itertools;
-use std::collections::HashMap;
 
 pub struct OutputData {
     output_rows: Vec<OutputRow>,
@@ -15,7 +14,7 @@ pub struct OutputData {
 
 impl OutputData {
     pub fn new(
-        group_stats: HashMap<String, NumberStats>,
+        group_stats: GroupNumberStats,
         input_delimiter: char,
         output_delimiter: Option<char>,
         decimals: usize,

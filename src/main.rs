@@ -13,6 +13,8 @@ use std::{
     path::PathBuf,
 };
 
+type GroupNumberStats = HashMap<String, NumberStats>;
+
 /// Grouped number stats on stream (count, min, max, mean, stddev).
 /// Takes the last column of the provided data as the number value to analyze.
 /// All preceding columns are interpreted as grouping data.
@@ -73,8 +75,8 @@ fn group_stats_in_buf_reader<R: BufRead>(
     buf_reader: R,
     delimiter: char,
     zero_as_null: bool,
-) -> HashMap<String, NumberStats> {
-    let mut group_stats = HashMap::<String, NumberStats>::new();
+) -> GroupNumberStats {
+    let mut group_number_stats = GroupNumberStats::new();
     for line in buf_reader.lines() {
         let raw = line.unwrap();
         match raw.rsplit_once(delimiter) {
