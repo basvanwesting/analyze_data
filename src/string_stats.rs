@@ -1,28 +1,20 @@
-use stats::{Frequencies, MinMax};
+use stats::MinMax;
+use std::collections::HashSet;
 
 pub struct StringStats {
     null_count: usize,
     min_max: MinMax<String>,
-    frequencies: Option<Frequencies<String>>,
+    frequencies: HashSet<String>,
     cardinality_cap: Option<usize>,
 }
 
 impl StringStats {
     pub fn new(cardinality_cap: Option<usize>) -> Self {
-        let frequencies = if let Some(cap) = cardinality_cap {
-            if cap == 0 {
-                None
-            } else {
-                Some(Frequencies::new())
-            }
-        } else {
-            Some(Frequencies::new())
-        };
-
         Self {
             null_count: 0,
             min_max: MinMax::new(),
-            frequencies,
+            // frequencies: HashSet::with_capacity(cardinality_cap.unwrap_or(0)),
+            frequencies: HashSet::new(),
             cardinality_cap,
         }
     }
@@ -31,13 +23,13 @@ impl StringStats {
         if let Some(cap) = self.cardinality_cap {
             if cap == 0 {
                 // skip cardinality
-            } else if self.frequencies.as_ref().unwrap().len() > cap {
+            } else if self.frequencies.len() > cap {
                 // skip adding cardinality
             } else {
-                self.frequencies.as_mut().unwrap().add(string);
+                self.frequencies.insert(string);
             }
         } else {
-            self.frequencies.as_mut().unwrap().add(string);
+            self.frequencies.insert(string);
         }
     }
     pub fn add_null(&mut self) {
@@ -57,12 +49,12 @@ impl StringStats {
     pub fn max(&self) -> Option<String> {
         self.min_max.max().cloned()
     }
-    pub fn cardinality(&self) -> u64 {
-        self.frequencies.as_ref().unwrap().cardinality()
+    pub fn cardinality(&self) -> usize {
+        self.frequencies.len()
     }
     pub fn is_cardinality_capped(&self) -> bool {
         if let Some(cap) = self.cardinality_cap {
-            self.frequencies.as_ref().unwrap().len() > cap
+            self.frequencies.len() > cap
         } else {
             false
         }
