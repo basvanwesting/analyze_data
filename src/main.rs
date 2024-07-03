@@ -34,10 +34,12 @@ enum Mode {
 }
 
 /// Analyze data from stream or file
+/// Preferable chain with sanitize_csv for input conditioning
+/// TODO: handle escape characters
 #[derive(Parser)]
 struct Cli {
     /// input delimiter
-    #[arg(short = 'd', long)]
+    #[arg(short = 'd', long, default_value_t = ',')]
     input_delimiter: char,
 
     /// Optional output delimiter, default to human readable table output
