@@ -1,7 +1,13 @@
 # Analyze data from stream or file
+Preferably chain with sanitize_csv for input conditioning of CSV structured input data 
+
+# TODO
+
+* handle escape characters
 
 ```
-Usage: analyze_data [OPTIONS] --input-delimiter <INPUT_DELIMITER> [MODE] [FILE]
+
+Usage: analyze_data [OPTIONS] [MODE] [FILE]
 
 Arguments:
   [MODE]
@@ -10,9 +16,11 @@ Arguments:
           [default: number]
 
           Possible values:
-          - number: Run stats on last column as number and interpret preceding columns as group
-          - string: Run stats on last column as string and interpret preceding columns as group
-          - csv:    Interpret input as CSV with headers and run stats for all
+          - number:       Run stats on input as number
+          - string:       Run stats on input as string
+          - group-number: Run stats on last column as number and interpret preceding columns as group
+          - group-string: Run stats on last column as string and interpret preceding columns as group
+          - csv:          Interpret input as CSV with headers and run stats for all
 
   [FILE]
           The path to the file to read, use - to read from stdin (must not be a tty)
@@ -22,6 +30,8 @@ Arguments:
 Options:
   -d, --input-delimiter <INPUT_DELIMITER>
           input delimiter
+
+          [default: ,]
 
   -D, --output-delimiter <OUTPUT_DELIMITER>
           Optional output delimiter, default to human readable table output
