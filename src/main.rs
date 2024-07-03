@@ -14,6 +14,8 @@ use std::{
 enum Mode {
     /// Run stats on input as number
     Number,
+    /// Run stats on input as string
+    String,
     /// Run stats on last column as number and interpret preceding columns as group
     GroupNumber,
     /// Run stats on last column as string and interpret preceding columns as group
@@ -23,7 +25,7 @@ enum Mode {
 }
 
 /// Analyze data from stream or file
-/// Preferable chain with sanitize_csv for input conditioning
+/// Preferable chain with sanitize_csv for input conditioning of CSV structured input data
 /// TODO: handle escape characters
 #[derive(Parser)]
 struct Cli {
@@ -74,7 +76,6 @@ fn main() {
             args.precision,
             args.zero_as_empty,
         ),
-
         Mode::GroupString => mode::group_string::run(
             buf_reader,
             args.input_delimiter,
@@ -82,7 +83,6 @@ fn main() {
             args.precision,
             args.zero_as_empty,
         ),
-
         Mode::GroupNumber => mode::group_number::run(
             buf_reader,
             args.input_delimiter,
@@ -91,6 +91,13 @@ fn main() {
             args.zero_as_empty,
         ),
         Mode::Number => mode::number::run(
+            buf_reader,
+            args.input_delimiter,
+            args.output_delimiter,
+            args.precision,
+            args.zero_as_empty,
+        ),
+        Mode::String => mode::string::run(
             buf_reader,
             args.input_delimiter,
             args.output_delimiter,
