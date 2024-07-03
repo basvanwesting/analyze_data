@@ -1,25 +1,71 @@
-use crate::output_row::OutputRow;
-use crate::GroupStringStats;
+use crate::number_stats::NumberStats;
+use crate::string_stats::StringStats;
 use cli_table::{
     format::{HorizontalLine, Justify, Separator, VerticalLine},
     print_stdout, Cell, CellStruct, Style, Table,
 };
 use itertools::Itertools;
+use std::collections::HashMap;
+use std::io::BufRead;
 
-pub struct OutputStringData {
+type Data = HashMap<String, (StringStats, NumberStats)>;
+struct OutputData {
     output_rows: Vec<OutputRow>,
     group_length: usize,
     output_delimiter: Option<char>,
 }
+pub struct OutputRow {
+    pub group_data: Vec<String>,
+    pub stats_data: Vec<String>,
+}
 
-impl OutputStringData {
+pub fn run<R: BufRead>(
+    buf_reader: R,
+    input_delimiter: char,
+    output_delimiter: Option<char>,
+    precision: usize,
+    zero_as_empty: bool,
+) {
+    let data = build_data(buf_reader, input_delimiter, zero_as_empty);
+    OutputData::new(data, input_delimiter, output_delimiter, precision).print();
+}
+
+fn build_data<R: BufRead>(buf_reader: R, delimiter: char, _zero_as_empty: bool) -> Data {
+    let mut data = Data::new();
+    for line in buf_reader.lines() {
+        let raw = line.unwrap();
+        match raw.rsplit_once(delimiter) {
+            Some((group, value)) => {
+                let (value_stats, length_stats) = data
+                    .entry(group.to_string())
+                    .or_insert((StringStats::new(), NumberStats::new()));
+
+                if value.is_empty() {
+                    value_stats.add_empty();
+                    length_stats.add_empty();
+                } else {
+                    value_stats.add(value.to_string());
+                    length_stats.add(value.len() as f64);
+                };
+            }
+            None => {
+                data.entry("<INVALID>".to_string())
+                    .and_modify(|(value_stats, _length_stats)| value_stats.add_error())
+                    .or_insert((StringStats::new(), NumberStats::new()));
+            }
+        }
+    }
+    data
+}
+
+impl OutputData {
     pub fn new(
-        group_string_stats: GroupStringStats,
+        data: Data,
         input_delimiter: char,
         output_delimiter: Option<char>,
-        decimals: usize,
+        precision: usize,
     ) -> Self {
-        let output_rows: Vec<OutputRow> = group_string_stats
+        let output_rows: Vec<OutputRow> = data
             .into_iter()
             .sorted_by(|a, b| Ord::cmp(&b.0, &a.0))
             .map(|(group, (value_stats, length_stats))| {
@@ -35,10 +81,13 @@ impl OutputStringData {
                     format!("{}", value_stats.max().unwrap_or("".to_string())),
                     format!("{:.*}", 0, length_stats.min().unwrap_or(0.0),),
                     format!("{:.*}", 0, length_stats.max().unwrap_or(0.0),),
-                    format!("{:.*}", decimals, length_stats.mean()),
-                    format!("{:.*}", decimals, length_stats.stddev()),
+                    format!("{:.*}", precision, length_stats.mean()),
+                    format!("{:.*}", precision, length_stats.stddev()),
                 ];
-                OutputRow::new(group_data, stats_data)
+                OutputRow {
+                    group_data,
+                    stats_data,
+                }
             })
             .collect();
         let group_length = output_rows.first().unwrap().group_data.len();

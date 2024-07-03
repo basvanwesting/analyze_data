@@ -1,24 +1,85 @@
-use crate::output_row::OutputRow;
-use crate::CsvStats;
+use crate::number_stats::NumberStats;
+use crate::string_stats::StringStats;
 use cli_table::{
     format::{HorizontalLine, Justify, Separator, VerticalLine},
     print_stdout, Cell, CellStruct, Style, Table,
 };
+use std::io::BufRead;
 
-pub struct OutputCsvData {
+type Data = Vec<(String, StringStats, NumberStats, NumberStats)>;
+struct OutputData {
     output_rows: Vec<OutputRow>,
     group_length: usize,
     output_delimiter: Option<char>,
 }
+pub struct OutputRow {
+    pub group_data: Vec<String>,
+    pub stats_data: Vec<String>,
+}
 
-impl OutputCsvData {
-    pub fn new(
-        csv_stats: CsvStats,
+pub fn run<R: BufRead>(
+    buf_reader: R,
+    input_delimiter: char,
+    output_delimiter: Option<char>,
+    precision: usize,
+    zero_as_empty: bool,
+) {
+    let data = build_data(buf_reader, input_delimiter, zero_as_empty);
+    OutputData::new(data, input_delimiter, output_delimiter, precision).print();
+}
+
+fn build_data<R: BufRead>(buf_reader: R, delimiter: char, zero_as_empty: bool) -> Data {
+    let mut lines_iter = buf_reader.lines();
+    let headers: Vec<String> = lines_iter
+        .next()
+        .unwrap()
+        .expect("at least one row for the header")
+        .split(delimiter)
+        .map(|v| v.to_string())
+        .collect();
+
+    let mut data: Data = headers
+        .into_iter()
+        .map(|header| {
+            (
+                header,
+                StringStats::new(),
+                NumberStats::new(),
+                NumberStats::new(),
+            )
+        })
+        .collect();
+
+    for line in lines_iter {
+        for ((_header, string_stats, number_stats, length_stats), value) in
+            data.iter_mut().zip(line.unwrap().split(delimiter))
+        {
+            if value.is_empty() {
+                string_stats.add_empty();
+                length_stats.add_empty();
+                number_stats.add_empty();
+            } else {
+                string_stats.add(value.to_string());
+                length_stats.add(value.len() as f64);
+                match value.parse::<f64>() {
+                    Ok(num) if zero_as_empty && num == 0.0 => number_stats.add_empty(),
+                    Ok(num) => number_stats.add(num),
+                    Err(_) => number_stats.add_error(),
+                };
+            };
+        }
+    }
+    data
+}
+
+impl OutputData {
+    fn new(
+        data: Data,
         _input_delimiter: char,
         output_delimiter: Option<char>,
-        decimals: usize,
+        precision: usize,
     ) -> Self {
-        let output_rows: Vec<OutputRow> = csv_stats
+        let output_rows: Vec<OutputRow> = data
             .into_iter()
             .map(|(header, string_stats, number_stats, length_stats)| {
                 let stats_data = vec![
@@ -29,16 +90,19 @@ impl OutputCsvData {
                     format!("{}", string_stats.max().unwrap_or("".to_string())),
                     format!("{}", number_stats.empty_count()),
                     format!("{}", number_stats.error_count()),
-                    format!("{:.*}", decimals, number_stats.min().unwrap_or(0.0),),
-                    format!("{:.*}", decimals, number_stats.max().unwrap_or(0.0),),
-                    format!("{:.*}", decimals, number_stats.mean()),
-                    format!("{:.*}", decimals, number_stats.stddev()),
+                    format!("{:.*}", precision, number_stats.min().unwrap_or(0.0),),
+                    format!("{:.*}", precision, number_stats.max().unwrap_or(0.0),),
+                    format!("{:.*}", precision, number_stats.mean()),
+                    format!("{:.*}", precision, number_stats.stddev()),
                     format!("{:.*}", 0, length_stats.min().unwrap_or(0.0),),
                     format!("{:.*}", 0, length_stats.max().unwrap_or(0.0),),
-                    format!("{:.*}", decimals, length_stats.mean()),
-                    format!("{:.*}", decimals, length_stats.stddev()),
+                    format!("{:.*}", precision, length_stats.mean()),
+                    format!("{:.*}", precision, length_stats.stddev()),
                 ];
-                OutputRow::new([header].to_vec(), stats_data)
+                OutputRow {
+                    group_data: [header].to_vec(),
+                    stats_data,
+                }
             })
             .collect();
         let group_length = output_rows.first().unwrap().group_data.len();
@@ -49,14 +113,14 @@ impl OutputCsvData {
         }
     }
 
-    pub fn print(&self) {
+    fn print(&self) {
         match self.output_delimiter {
             None => self.print_table(),
             Some(delimiter) => self.print_csv(delimiter),
         }
     }
 
-    pub fn print_table(&self) {
+    fn print_table(&self) {
         let separator = Separator::builder()
             .title(Some(HorizontalLine::default()))
             .column(Some(VerticalLine::default()))
@@ -109,7 +173,7 @@ impl OutputCsvData {
         print_stdout(table).unwrap();
     }
 
-    pub fn print_csv(&self, delimiter: char) {
+    fn print_csv(&self, delimiter: char) {
         let delimiter = delimiter.to_string();
         println!(
             "{}{}",
