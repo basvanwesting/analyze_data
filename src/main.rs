@@ -12,6 +12,8 @@ use std::{
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 enum Mode {
+    /// Run stats on input as number
+    Number,
     /// Run stats on last column as number and interpret preceding columns as group
     GroupNumber,
     /// Run stats on last column as string and interpret preceding columns as group
@@ -82,6 +84,13 @@ fn main() {
         ),
 
         Mode::GroupNumber => mode::group_number::run(
+            buf_reader,
+            args.input_delimiter,
+            args.output_delimiter,
+            args.precision,
+            args.zero_as_empty,
+        ),
+        Mode::Number => mode::number::run(
             buf_reader,
             args.input_delimiter,
             args.output_delimiter,
