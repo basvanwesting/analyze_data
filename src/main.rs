@@ -13,9 +13,9 @@ use std::{
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 enum Mode {
     /// Run stats on last column as number and interpret preceding columns as group
-    Number,
+    GroupNumber,
     /// Run stats on last column as string and interpret preceding columns as group
-    String,
+    GroupString,
     /// Interpret input as CSV with headers and run stats for all
     Csv,
 }
@@ -73,7 +73,7 @@ fn main() {
             args.zero_as_empty,
         ),
 
-        Mode::String => mode::string::run(
+        Mode::GroupString => mode::group_string::run(
             buf_reader,
             args.input_delimiter,
             args.output_delimiter,
@@ -81,7 +81,7 @@ fn main() {
             args.zero_as_empty,
         ),
 
-        Mode::Number => mode::number::run(
+        Mode::GroupNumber => mode::group_number::run(
             buf_reader,
             args.input_delimiter,
             args.output_delimiter,

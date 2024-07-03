@@ -1,3 +1,3 @@
 pub mod csv;
-pub mod number;
-pub mod string;
+pub mod group_number;
+pub mod group_string;
