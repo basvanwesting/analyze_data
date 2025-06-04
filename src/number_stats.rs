@@ -5,6 +5,7 @@ pub struct NumberStats {
     error_count: usize,
     online_stats: OnlineStats,
     min_max: MinMax<f64>,
+    sum: f64,
 }
 
 impl NumberStats {
@@ -14,11 +15,13 @@ impl NumberStats {
             error_count: 0,
             online_stats: OnlineStats::new(),
             min_max: MinMax::new(),
+            sum: 0.0,
         }
     }
     pub fn add(&mut self, num: f64) {
         self.online_stats.add(num);
         self.min_max.add(num);
+        self.sum += num;
     }
     pub fn add_empty(&mut self) {
         self.empty_count += 1;
@@ -51,7 +54,7 @@ impl NumberStats {
         self.online_stats.stddev()
     }
     pub fn sum(&self) -> f64 {
-        self.online_stats.mean() * self.online_stats.len() as f64
+        self.sum
     }
 }
 
