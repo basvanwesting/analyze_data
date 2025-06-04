@@ -70,6 +70,7 @@ mod tests {
         assert_eq!(stats.error_count(), 0);
         assert_eq!(stats.min(), None);
         assert_eq!(stats.max(), None);
+        assert_eq!(stats.sum(), 0.0);
         assert_eq!(stats.mean(), 0.0);
         assert_eq!(stats.stddev(), 0.0);
     }
@@ -82,6 +83,7 @@ mod tests {
         assert_eq!(stats.count(), 2);
         assert_eq!(stats.min(), Some(1.0));
         assert_eq!(stats.max(), Some(2.0));
+        assert_eq!(stats.sum(), 3.0);
         assert_eq!(stats.mean(), 1.5);
         assert!((stats.stddev() - 0.5).abs() < f64::EPSILON);
     }
