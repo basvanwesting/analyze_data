@@ -92,7 +92,7 @@ impl OutputData {
                     format!("{}", number_stats.error_count()),
                     format!("{:.*}", precision, number_stats.min().unwrap_or(0.0),),
                     format!("{:.*}", precision, number_stats.max().unwrap_or(0.0),),
-                    format!("{:.*e}", precision, number_stats.sum()),
+                    format!("{:.e}", number_stats.sum()),
                     format!("{:.*}", precision, number_stats.mean()),
                     format!("{:.*}", precision, number_stats.stddev()),
                     format!("{:.*}", 0, length_stats.min().unwrap_or(0.0),),
