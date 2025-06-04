@@ -77,6 +77,7 @@ impl OutputData {
                     format!("{}", number_stats.error_count()),
                     format!("{:.*}", precision, number_stats.min().unwrap_or(0.0),),
                     format!("{:.*}", precision, number_stats.max().unwrap_or(0.0),),
+                    format!("{:.*e}", precision, number_stats.sum()),
                     format!("{:.*}", precision, number_stats.mean()),
                     format!("{:.*}", precision, number_stats.stddev()),
                 ];
@@ -119,6 +120,7 @@ impl OutputData {
             "Error".cell().justify(Justify::Right).bold(true),
             "Min".cell().justify(Justify::Right).bold(true),
             "Max".cell().justify(Justify::Right).bold(true),
+            "Sum".cell().justify(Justify::Right).bold(true),
             "Mean".cell().justify(Justify::Right).bold(true),
             "StdDev".cell().justify(Justify::Right).bold(true),
         ];
@@ -151,7 +153,7 @@ impl OutputData {
         println!(
             "{}{}",
             delimiter.repeat(self.group_length),
-            ["count", "empty", "error", "min", "max", "mean", "stddev"].join(&delimiter)
+            ["count", "empty", "error", "min", "max", "sum", "mean", "stddev"].join(&delimiter)
         );
         for row in self.output_rows.iter() {
             println!(

@@ -50,6 +50,9 @@ impl NumberStats {
     pub fn stddev(&self) -> f64 {
         self.online_stats.stddev()
     }
+    pub fn sum(&self) -> f64 {
+        self.online_stats.mean() * self.online_stats.len() as f64
+    }
 }
 
 #[cfg(test)]
